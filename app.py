@@ -8,7 +8,7 @@ try:
     from dotenv import load_dotenv
     load_dotenv()
 except ImportError:
-    print("Aviso: python-dotenv não está instalado. As variáveis .env não foram carregadas.")
+    print("Aviso: python-dotenv não está instalado. As variáveis .env não foram carregadas")
 
 app = Flask(__name__)
 
