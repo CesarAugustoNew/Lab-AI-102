@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auditoria NLP - AI-102</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: Arial, Helvetica, sans-serif;
+            background: #0f172a;
+            color: #e5e7eb;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 920px;
+            background: #111827;
+            border: 1px solid #334155;
+            border-radius: 18px;
+            padding: 28px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+        }
+
+        .topo {
+            margin-bottom: 24px;
+        }
+
+        .tag {
+            display: inline-block;
+            background: #1d4ed8;
+            color: white;
+            padding: 6px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: bold;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 28px;
+            color: #f8fafc;
+        }
+
+        p {
+            color: #cbd5e1;
+            line-height: 1.5;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 150px;
+            resize: vertical;
+            border-radius: 12px;
+            border: 1px solid #475569;
+            background: #020617;
+            color: #e5e7eb;
+            padding: 16px;
+            font-size: 15px;
+            outline: none;
+        }
+
+        textarea:focus {
+            border-color: #38bdf8;
+        }
+
+        button {
+            margin-top: 14px;
+            width: 100%;
+            border: none;
+            border-radius: 12px;
+            padding: 14px;
+            font-weight: bold;
+            font-size: 15px;
+            cursor: pointer;
+            background: #2563eb;
+            color: white;
+            transition: 0.2s;
+        }
+
+        button:hover {
+            background: #1d4ed8;
+        }
+
+        button:disabled {
+            opacity: 0.65;
+            cursor: not-allowed;
+        }
+
+        .status {
+            margin-top: 16px;
+            display: none;
+            color: #facc15;
+            font-weight: bold;
+        }
+
+        .erro {
+            margin-top: 16px;
+            display: none;
+            background: #7f1d1d;
+            border: 1px solid #ef4444;
+            color: #fee2e2;
+            padding: 12px;
+            border-radius: 12px;
+        }
+
+        .resultados {
+            margin-top: 26px;
+            display: none;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 16px;
+        }
+
+        .card {
+            background: #020617;
+            border: 1px solid #334155;
+            border-radius: 14px;
+            padding: 16px;
+        }
+
+        .card h2 {
+            font-size: 16px;
+            margin-top: 0;
+            margin-bottom: 12px;
+            color: #93c5fd;
+        }
+
+        .valor-principal {
+            font-size: 20px;
+            font-weight: bold;
+            color: #f8fafc;
+        }
+
+        .lista-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .item-tag {
+            background: #1e293b;
+            border: 1px solid #475569;
+            border-radius: 999px;
+            padding: 7px 10px;
+            font-size: 13px;
+        }
+
+        .texto-mascarado {
+            white-space: pre-wrap;
+            color: #cbd5e1;
+            line-height: 1.5;
+        }
+
+        .full {
+            grid-column: 1 / -1;
+        }
+
+        @media (max-width: 760px) {
+            .resultados {
+                grid-template-columns: 1fr;
+            }
+
+            h1 {
+                font-size: 23px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <main class="container">
+        <section class="topo">
+            <span class="tag">AI-102 • Azure AI Language</span>
+
+            <h1>Sistema de Auditoria NLP</h1>
+
+            <p>
+                Digite um texto para analisar idioma, sentimento, entidades,
+                frases-chave e possíveis dados pessoais identificáveis.
+            </p>
+        </section>
+
+        <textarea 
+            id="textoEntrada" 
+            placeholder="Exemplo: João, gerente da Contoso, viajou para São Paulo em 10 de maio e enviou um e-mail para joao@email.com dizendo que ficou satisfeito com o projeto.">
+        </textarea>
+
+        <button id="botao" onclick="analisarTexto()">
+            Analisar texto
+        </button>
+
+        <div id="status" class="status">
+            Processando texto na Azure...
+        </div>
+
+        <div id="erro" class="erro"></div>
+
+        <section id="resultados" class="resultados">
+            <div class="card">
+                <h2>Idioma detectado</h2>
+                <div id="idioma" class="valor-principal">-</div>
+                <p id="idiomaDetalhe">-</p>
+            </div>
+
+            <div class="card">
+                <h2>Sentimento</h2>
+                <div id="sentimento" class="valor-principal">-</div>
+                <p id="sentimentoDetalhe">-</p>
+            </div>
+
+            <div class="card full">
+                <h2>Entidades nomeadas</h2>
+                <div id="entidades" class="lista-tags"></div>
+            </div>
+
+            <div class="card full">
+                <h2>Frases-chave</h2>
+                <div id="frases" class="lista-tags"></div>
+            </div>
+
+            <div class="card full">
+                <h2>PII detectado</h2>
+                <div id="pii" class="lista-tags"></div>
+            </div>
+
+            <div class="card full">
+                <h2>Texto com PII mascarado</h2>
+                <div id="textoMascarado" class="texto-mascarado">-</div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        function criarTag(texto) {
+            const span = document.createElement("span");
+            span.className = "item-tag";
+            span.textContent = texto;
+            return span;
+        }
+
+        function limparElemento(id) {
+            document.getElementById(id).innerHTML = "";
+        }
+
+        async function analisarTexto() {
+            const texto = document.getElementById("textoEntrada").value.trim();
+            const status = document.getElementById("status");
+            const erro = document.getElementById("erro");
+            const resultados = document.getElementById("resultados");
+            const botao = document.getElementById("botao");
+
+            erro.style.display = "none";
+            resultados.style.display = "none";
+
+            if (!texto) {
+                erro.textContent = "Digite um texto antes de analisar.";
+                erro.style.display = "block";
+                return;
+            }
+
+            botao.disabled = true;
+            status.style.display = "block";
+
+            try {
+                const resposta = await fetch("/analisar", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ texto: texto })
+                });
+
+                const dados = await resposta.json();
+
+                if (!resposta.ok) {
+                    throw new Error(dados.erro || "Erro ao processar texto.");
+                }
+
+                document.getElementById("idioma").textContent = dados.idioma.nome;
+
+                document.getElementById("idiomaDetalhe").textContent =
+                    `Código: ${dados.idioma.codigo} • Confiança: ${dados.idioma.confianca}`;
+
+                document.getElementById("sentimento").textContent =
+                    dados.sentimento.geral.toUpperCase();
+
+                document.getElementById("sentimentoDetalhe").textContent =
+                    `Positivo: ${dados.sentimento.positivo} • Neutro: ${dados.sentimento.neutro} • Negativo: ${dados.sentimento.negativo}`;
+
+                limparElemento("entidades");
+
+                if (dados.entidades.length === 0) {
+                    document.getElementById("entidades").appendChild(
+                        criarTag("Nenhuma entidade encontrada")
+                    );
+                } else {
+                    dados.entidades.forEach(entidade => {
+                        const subcategoria = entidade.subcategoria
+                            ? `/${entidade.subcategoria}`
+                            : "";
+
+                        document.getElementById("entidades").appendChild(
+                            criarTag(
+                                `${entidade.texto} • ${entidade.categoria}${subcategoria} • Confiança: ${entidade.confianca}`
+                            )
+                        );
+                    });
+                }
+
+                limparElemento("frases");
+
+                if (dados.frases_chave.length === 0) {
+                    document.getElementById("frases").appendChild(
+                        criarTag("Nenhuma frase-chave encontrada")
+                    );
+                } else {
+                    dados.frases_chave.forEach(frase => {
+                        document.getElementById("frases").appendChild(
+                            criarTag(frase)
+                        );
+                    });
+                }
+
+                limparElemento("pii");
+
+                if (dados.pii.length === 0) {
+                    document.getElementById("pii").appendChild(
+                        criarTag("Nenhum PII identificado")
+                    );
+                } else {
+                    dados.pii.forEach(item => {
+                        const subcategoria = item.subcategoria
+                            ? `/${item.subcategoria}`
+                            : "";
+
+                        document.getElementById("pii").appendChild(
+                            criarTag(
+                                `${item.texto} • ${item.categoria}${subcategoria} • Confiança: ${item.confianca}`
+                            )
+                        );
+                    });
+                }
+
+                document.getElementById("textoMascarado").textContent =
+                    dados.texto_mascarado;
+
+                resultados.style.display = "grid";
+
+            } catch (e) {
+                erro.textContent = e.message;
+                erro.style.display = "block";
+            } finally {
+                status.style.display = "none";
+                botao.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>
