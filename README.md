@@ -1,9 +1,9 @@
-# Lab-AI-102-Language
+# Lab-AI-102
 
-Projeto de estudos sobre Azure AI Language Services para prática da certificação AI-102 da Microsoft.
+Projeto de estudos sobre Azure AI Services para prática da certificação AI-102 da Microsoft.
 
 ## 🚀 Tecnologias
 
 - Python
-- Azure AI Language
+- Azure 
 - VS Code
