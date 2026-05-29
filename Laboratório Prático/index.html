@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure Vision | AI Operations</title>
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:'Inter',sans-serif;
+}
+
+body{
+    background:linear-gradient(135deg,#0A0A0F 0%,#111827 100%);
+    color:#F8FAFC;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    min-height:100vh;
+    padding:20px;
+}
+
+/* Dashboard */
+
+.dashboard{
+    position:relative;
+    overflow:hidden;
+
+    width:100%;
+    max-width:900px;
+
+    background:rgba(17,24,39,.95);
+    border:1px solid #27272A;
+    border-radius:20px;
+    padding:32px;
+
+    backdrop-filter:blur(20px);
+
+    box-shadow:
+        0 20px 40px rgba(0,0,0,.4),
+        0 0 60px rgba(139,92,246,.15);
+}
+
+.dashboard::before{
+    content:"";
+    position:absolute;
+    width:400px;
+    height:400px;
+    top:-150px;
+    right:-150px;
+
+    background:radial-gradient(
+        circle,
+        rgba(139,92,246,.18),
+        transparent 70%
+    );
+
+    pointer-events:none;
+}
+
+.dashboard::after{
+    content:"";
+    position:absolute;
+    width:300px;
+    height:300px;
+    bottom:-120px;
+    left:-120px;
+
+    background:radial-gradient(
+        circle,
+        rgba(6,182,212,.15),
+        transparent 70%
+    );
+
+    pointer-events:none;
+}
+
+/* Header */
+
+header{
+    position:relative;
+    z-index:1;
+
+    border-bottom:1px solid #27272A;
+    padding-bottom:16px;
+    margin-bottom:24px;
+}
+
+h1{
+    font-size:1.9rem;
+    font-weight:700;
+    color:#F8FAFC;
+}
+
+h1 span{
+    color:#8B5CF6;
+}
+
+.subtitle{
+    color:#94A3B8;
+    margin-top:6px;
+    font-size:.95rem;
+}
+
+/* Grid */
+
+.grid{
+    position:relative;
+    z-index:1;
+
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:24px;
+}
+
+@media(max-width:768px){
+    .grid{
+        grid-template-columns:1fr;
+    }
+}
+
+/* Upload */
+
+.upload-section{
+    display:flex;
+    flex-direction:column;
+    gap:15px;
+}
+
+.upload-area{
+    position:relative;
+    cursor:pointer;
+
+    padding:35px 20px;
+    text-align:center;
+
+    border:2px dashed #3F3F46;
+    border-radius:14px;
+
+    background:rgba(139,92,246,.05);
+
+    transition:.3s;
+}
+
+.upload-area:hover{
+    border-color:#8B5CF6;
+    background:rgba(139,92,246,.12);
+    box-shadow:0 0 25px rgba(139,92,246,.2);
+}
+
+.upload-area input{
+    position:absolute;
+    inset:0;
+    opacity:0;
+    cursor:pointer;
+}
+
+.upload-area h3{
+    color:#E2E8F0;
+    margin-bottom:6px;
+}
+
+.upload-area p{
+    color:#94A3B8;
+    font-size:.9rem;
+}
+
+#preview{
+    display:none;
+    width:100%;
+    border-radius:12px;
+    border:1px solid #3F3F46;
+    box-shadow:0 10px 30px rgba(0,0,0,.35);
+}
+
+/* Botão */
+
+.btn{
+    padding:14px;
+
+    border:none;
+    border-radius:10px;
+
+    font-size:1rem;
+    font-weight:600;
+    color:#FFF;
+
+    cursor:pointer;
+
+    background:linear-gradient(
+        135deg,
+        #8B5CF6 0%,
+        #7C3AED 50%,
+        #06B6D4 100%
+    );
+
+    box-shadow:0 8px 25px rgba(139,92,246,.35);
+
+    transition:.25s;
+}
+
+.btn:hover{
+    transform:translateY(-2px);
+    box-shadow:0 12px 35px rgba(139,92,246,.45);
+}
+
+/* Results */
+
+.results-panel{
+    background:#0F172A;
+    border:1px solid #27272A;
+    border-radius:14px;
+    padding:24px;
+}
+
+.results-panel h3{
+    color:#F8FAFC;
+    margin-bottom:18px;
+}
+
+.tags-container{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+}
+
+.badge{
+    display:flex;
+    align-items:center;
+    gap:8px;
+
+    padding:7px 14px;
+    border-radius:999px;
+
+    background:rgba(139,92,246,.12);
+    border:1px solid rgba(139,92,246,.25);
+
+    color:#DDD6FE;
+    font-size:.85rem;
+    font-weight:500;
+
+    animation:fadeIn .3s ease;
+}
+
+.badge .conf{
+    background:#8B5CF6;
+    color:white;
+
+    padding:2px 8px;
+    border-radius:999px;
+
+    font-size:.75rem;
+}
+
+.loader{
+    display:none;
+    color:#06B6D4;
+    font-weight:600;
+    animation:pulse 1.5s infinite;
+}
+
+@keyframes fadeIn{
+    from{
+        opacity:0;
+        transform:translateY(5px);
+    }
+    to{
+        opacity:1;
+        transform:translateY(0);
+    }
+}
+
+@keyframes pulse{
+    0%{opacity:.5;}
+    50%{opacity:1;}
+    100%{opacity:.5;}
+}
+</style>
+</head>
+
+<body>
+
+<div class="dashboard">
+
+    <header>
+        <h1>☁️ Azure <span>Vision AI</span></h1>
+        <p class="subtitle">
+            Plataforma Inteligente de Classificação e Extração de Metadados
+        </p>
+    </header>
+
+    <div class="grid">
+
+        <div class="upload-section">
+
+            <div class="upload-area">
+                <input
+                    type="file"
+                    id="fotoInput"
+                    accept="image/*"
+                    onchange="mostrarPreview(this)"
+                >
+
+                <h3>📁 Selecionar Arquivo</h3>
+                <p>Arraste uma imagem ou clique para procurar</p>
+            </div>
+
+            <img id="preview" alt="Preview da imagem">
+
+            <button class="btn" onclick="enviarParaAPI()">
+                🚀 Analisar Imagem
+            </button>
+
+        </div>
+
+        <div class="results-panel">
+
+            <h3>🤖 Resultados da IA</h3>
+
+            <div id="loader" class="loader">
+                Processando imagem...
+            </div>
+
+            <div id="resultados" class="tags-container">
+                <p style="color:#94A3B8;">
+                    Aguardando envio de imagem...
+                </p>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+function mostrarPreview(input){
+    const preview = document.getElementById('preview');
+    const divResultados = document.getElementById('resultados');
+
+    if(input.files && input.files[0]){
+        const leitor = new FileReader();
+
+        leitor.onload = function(e){
+            preview.src = e.target.result;
+            preview.style.display = 'block';
+        }
+
+        leitor.readAsDataURL(input.files[0]);
+        divResultados.innerHTML = "";
+    }
+}
+
+async function enviarParaAPI(){
+
+    const input = document.getElementById('fotoInput');
+    const divResultados = document.getElementById('resultados');
+    const loader = document.getElementById('loader');
+
+    if(input.files.length === 0){
+        alert("Selecione uma imagem antes de continuar.");
+        return;
+    }
+
+    divResultados.innerHTML = "";
+    loader.style.display = "block";
+
+    const formData = new FormData();
+    formData.append("arquivo", input.files[0]);
+
+    try{
+
+        const resposta = await fetch(
+            "http://127.0.0.1:8000/analisar",
+            {
+                method:"POST",
+                body:formData
+            }
+        );
+
+        const json = await resposta.json();
+
+        loader.style.display = "none";
+
+        if(json.sucesso && json.dados.length > 0){
+
+            json.dados.forEach(tag => {
+
+                divResultados.innerHTML += `
+                    <div class="badge">
+                        ${tag.nome}
+                        <span class="conf">
+                            ${tag.confianca}%
+                        </span>
+                    </div>
+                `;
+            });
+
+        } else if(json.sucesso){
+
+            divResultados.innerHTML = `
+                <p style="color:#CBD5E1;">
+                    Nenhuma classificação encontrada.
+                </p>
+            `;
+
+        } else {
+
+            divResultados.innerHTML = `
+                <p style="color:#EF4444;">
+                    Erro: ${json.erro}
+                </p>
+            `;
+        }
+
+    } catch(erro){
+
+        loader.style.display = "none";
+
+        divResultados.innerHTML = `
+            <p style="color:#EF4444;">
+                Não foi possível conectar ao servidor FastAPI.
+            </p>
+        `;
+    }
+}
+</script>
+
+</body>
+</html>
