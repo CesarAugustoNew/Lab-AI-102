@@ -14,7 +14,8 @@ cliente_documentos = DocumentAnalysisClient(
     credential=AzureKeyCredential(CHAVE)
 )
 
-print("-----------------")
+
+print("-------------------------")
 print("Sistema de Auditoria Recibo")
 
 caminho_arquivo = "meu_recibo.jpg"
