@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="data:,">
+    <title>ChatFlix 4D</title>
+    
+    <style>
+        /* Variáveis Padrão (O Tema base da Netflix) */
+        :root {
+            --bg-color: #050505;
+            --primary-red: #E50914;
+            --primary-gradient: linear-gradient(135deg, #E50914 0%, #8b0000 100%);
+            --text-light: #f5f5f1;
+            --glass-bg: rgba(20, 20, 20, 0.6);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --ia-bubble: rgba(255, 255, 255, 0.05);
+            --bg-glow: rgba(229, 9, 20, 0.15);
+        }
+
+        /* --- OS TEMAS DINÂMICOS 4D --- */
+
+        /* Tema: Terror */
+        body.theme-terror {
+            --primary-red: #8b0000;
+            --primary-gradient: linear-gradient(135deg, #4a0000 0%, #000000 100%);
+            --bg-glow: rgba(139, 0, 0, 0.3);
+            animation: glitchBg 0.15s infinite alternate; /* Fundo tremendo e piscando */
+        }
+        body.theme-terror .chat-container { border: 1px solid rgba(139, 0, 0, 0.5); box-shadow: 0 10px 40px rgba(139, 0, 0, 0.4); }
+        body.theme-terror h1 { text-shadow: 2px 2px 0px #ff0000, -2px -2px 0px #0000ff; animation: glitchText 2s infinite; }
+
+        /* Tema: Comédia */
+        body.theme-comedia {
+            --primary-red: #facc15; /* Amarelo Vibrante */
+            --primary-gradient: linear-gradient(135deg, #facc15 0%, #eab308 100%);
+            --bg-glow: rgba(250, 204, 21, 0.2);
+        }
+
+        /* Tema: Ação */
+        body.theme-acao {
+            --primary-red: #0ea5e9; /* Azul Cyberpunk */
+            --primary-gradient: linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%);
+            --bg-glow: rgba(14, 165, 233, 0.25);
+        }
+
+        /* Tema: Romance */
+        body.theme-romance {
+            --primary-red: #ec4899; /* Rosa Neon */
+            --primary-gradient: linear-gradient(135deg, #ec4899 0%, #be185d 100%);
+            --bg-glow: rgba(236, 72, 153, 0.2);
+        }
+
+        body { 
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
+            background-color: var(--bg-color); 
+            color: var(--text-light); 
+            display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; 
+            background-image: radial-gradient(circle at 50% 0%, var(--bg-glow), transparent 60%), radial-gradient(circle at 50% 100%, rgba(20, 20, 20, 1), #050505 80%); 
+            background-attachment: fixed; overflow: hidden; 
+            transition: --primary-red 1s, background-image 1.5s ease; /* Transição suave de cenários */
+        }
+        
+        .chat-container { background: var(--glass-bg); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); width: 500px; max-width: 95%; height: 85vh; border-radius: 24px; box-shadow: 0 25px 50px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1); display: flex; flex-direction: column; border: 1px solid var(--glass-border); overflow: hidden; position: relative; transition: all 1s ease; }
+        .cabecalho { padding: 24px; text-align: center; border-bottom: 1px solid var(--glass-border); background: linear-gradient(to bottom, rgba(0,0,0,0.4), transparent); }
+        .cabecalho h1 { margin: 0; font-size: 1.6rem; color: var(--primary-red); letter-spacing: 3px; text-transform: uppercase; font-weight: 800; text-shadow: 0 2px 10px rgba(0, 0, 0, 0.8); transition: color 1s ease; }
+        
+        .historico { flex: 1; padding: 25px; overflow-y: auto; display: flex; flex-direction: column; gap: 18px; scroll-behavior: smooth; }
+        .historico::-webkit-scrollbar { display: none; }
+        
+        .balao { padding: 16px 20px; border-radius: 20px; max-width: 82%; font-size: 1rem; line-height: 1.5; letter-spacing: 0.3px; animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+        .balao.usuario { background: var(--primary-gradient); color: white; align-self: flex-end; border-bottom-right-radius: 4px; box-shadow: 0 8px 20px rgba(0,0,0,0.4); }
+        .balao.ia { background: var(--ia-bubble); border: 1px solid var(--glass-border); color: #e5e5e5; align-self: flex-start; border-bottom-left-radius: 4px; }
+
+        .btn-audio { display: inline-flex; align-items: center; justify-content: center; margin-top: 12px; margin-right: 10px; padding: 8px 16px; background: rgba(255, 255, 255, 0.1); color: white; border: 1px solid transparent; border-radius: 50px; cursor: pointer; font-weight: 600; font-size: 0.85rem; transition: all 0.2s ease; min-width: 110px; height: 35px; }
+        .btn-audio:hover:not(.playing) { background: rgba(255, 255, 255, 0.2); transform: translateY(-2px); }
+        .btn-audio.playing { background: var(--primary-red); box-shadow: 0 0 15px var(--bg-glow); pointer-events: none; }
+        
+        .btn-trailer { display: inline-flex; align-items: center; margin-top: 12px; padding: 8px 18px; background: transparent; color: var(--primary-red); border: 1.5px solid var(--primary-red); border-radius: 50px; text-decoration: none; font-weight: 600; font-size: 0.85rem; transition: all 0.2s ease; }
+        .btn-trailer:hover { background: var(--primary-gradient); color: white; border-color: transparent; transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
+
+        .seletor-idioma { display: flex; justify-content: center; gap: 8px; padding: 10px 0; background: rgba(0,0,0,0.3); border-top: 1px solid var(--glass-border); }
+        .btn-lang { background: transparent; border: 1px solid rgba(255,255,255,0.2); color: white; padding: 6px 12px; border-radius: 20px; cursor: pointer; font-size: 0.85rem; transition: 0.3s; opacity: 0.6; }
+        .btn-lang.ativo { background: rgba(255, 255, 255, 0.1); border-color: var(--primary-red); opacity: 1; font-weight: bold; }
+
+        .controles { padding: 15px 25px 20px 25px; display: flex; gap: 12px; background: rgba(0,0,0,0.3); }
+        input { flex: 1; padding: 16px 20px; background: rgba(0, 0, 0, 0.4); border: 1px solid var(--glass-border); border-radius: 50px; color: white; font-size: 0.95rem; outline: none; transition: all 0.3s ease; }
+        input::placeholder { color: rgba(255,255,255,0.4); }
+        input:focus { border-color: var(--primary-red); background: rgba(0, 0, 0, 0.6); }
+        button.btn-enviar { background: var(--primary-gradient); color: white; border: none; padding: 0 24px; border-radius: 50px; cursor: pointer; font-weight: bold; font-size: 1rem; transition: all 0.3s ease; }
+        button.btn-enviar:hover { transform: scale(1.05); }
+
+        .typing-container { padding: 5px 20px; display: none; align-self: flex-start; }
+        .typing-indicator { display: flex; gap: 4px; background: var(--ia-bubble); padding: 12px 18px; border-radius: 20px; border: 1px solid var(--glass-border); border-bottom-left-radius: 4px; }
+        .dot { width: 8px; height: 8px; background-color: var(--primary-red); border-radius: 50%; opacity: 0.6; animation: bounce 1.4s infinite ease-in-out both; }
+        .dot:nth-child(1) { animation-delay: -0.32s; }
+        .dot:nth-child(2) { animation-delay: -0.16s; }
+
+        .waveform { display: flex; align-items: center; justify-content: center; gap: 3px; height: 15px; }
+        .bar { width: 3px; background-color: white; border-radius: 3px; animation: sound 0ms -800ms linear infinite alternate; }
+        .bar:nth-child(1) { height: 4px; animation-duration: 474ms; }
+        .bar:nth-child(2) { height: 12px; animation-duration: 433ms; }
+        .bar:nth-child(3) { height: 15px; animation-duration: 407ms; }
+        .bar:nth-child(4) { height: 10px; animation-duration: 458ms; }
+        .bar:nth-child(5) { height: 5px; animation-duration: 400ms; }
+
+        .toast { position: fixed; top: 30px; right: -300px; background: rgba(229, 9, 20, 0.9); backdrop-filter: blur(10px); color: white; padding: 15px 20px; border-radius: 12px; font-size: 0.9rem; font-weight: bold; display: flex; align-items: center; gap: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); transition: right 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55); z-index: 1000; }
+        .toast.show { right: 30px; }
+
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
+        @keyframes sound { 0% { height: 3px; opacity: 0.5; } 100% { height: 15px; opacity: 1; } }
+        
+        /* Animações de Terror */
+        @keyframes glitchBg {
+            0% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(-1px, 1px) scale(1.002); }
+            100% { transform: translate(1px, -1px) scale(1); }
+        }
+        @keyframes glitchText {
+            0%, 100% { transform: translate(0); }
+            10% { transform: translate(-2px, 2px); }
+            20% { transform: translate(2px, -2px); }
+            30% { transform: translate(-2px, -2px); }
+            40% { transform: translate(2px, 2px); }
+            50% { transform: translate(0); }
+        }
+    </style>
+</head>
+<body class="theme-padrao"> <div id="toast" class="toast">
+        <span>⚠️ Erro no sistema.</span>
+    </div>
+
+    <div class="chat-container">
+        <div class="cabecalho">
+            <h1>ChatFlix</h1>
+        </div>
+        
+        <div class="historico" id="historico">
+            <div class="balao ia">Olá! Sou o assistente  virtual. Quer um romance, uma comédia ou tem coragem para um terror hoje?</div>
+            
+            <div class="typing-container" id="typingContainer">
+                <div class="typing-indicator">
+                    <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="seletor-idioma">
+            <button class="btn-lang ativo" onclick="mudarIdioma('pt', this)">🇧🇷 Português</button>
+            <button class="btn-lang" onclick="mudarIdioma('en', this)">🇺🇸 English</button>
+            <button class="btn-lang" onclick="mudarIdioma('es', this)">🇪🇸 Español</button>
+            <button class="btn-lang" onclick="mudarIdioma('ja', this)">🇯🇵 日本語</button>
+        </div>
+
+        <div class="controles">
+            <input type="text" id="inputMensagem" placeholder="Ex: Eu quero tomar um susto hoje..." onkeypress="if(event.key === 'Enter') enviarMensagem()">
+            <button class="btn-enviar" onclick="enviarMensagem()">Enviar</button>
+        </div>
+    </div>
+
+    <audio id="playerAudio" style="display: none;"></audio>
+
+    <script>
+        const historico = document.getElementById('historico');
+        const typingContainer = document.getElementById('typingContainer');
+        const inputMensagem = document.getElementById('inputMensagem');
+        const playerAudio = document.getElementById('playerAudio');
+        const toast = document.getElementById('toast');
+        
+        let idiomaAtual = 'pt'; 
+
+        playerAudio.onended = function() {
+            document.querySelectorAll('.btn-audio.playing').forEach(btn => {
+                btn.classList.remove('playing');
+                btn.innerHTML = "🔊 Ouvir Voz";
+            });
+        };
+
+        function mudarIdioma(sigla, botaoElement) {
+            idiomaAtual = sigla;
+            document.querySelectorAll('.btn-lang').forEach(btn => btn.classList.remove('ativo'));
+            botaoElement.classList.add('ativo');
+            inputMensagem.focus();
+        }
+
+        function mostrarToast() {
+            toast.classList.add('show');
+            setTimeout(() => { toast.classList.remove('show'); }, 4000);
+        }
+
+        function adicionarBalao(texto, remetente, urlTrailer = null, urlAudio = null) {
+            const div = document.createElement('div');
+            div.className = `balao ${remetente}`;
+            div.textContent = texto;
+
+            if (remetente === 'ia' && urlAudio) {
+                const quebraLinha = document.createElement('br');
+                div.appendChild(quebraLinha);
+
+                const btnAudio = document.createElement('button');
+                btnAudio.className = "btn-audio";
+                btnAudio.innerHTML = "🔊 Ouvir Voz";
+                
+                btnAudio.onclick = function() {
+                    document.querySelectorAll('.btn-audio').forEach(b => {
+                        b.classList.remove('playing');
+                        b.innerHTML = "🔊 Ouvir Voz";
+                    });
+
+                    this.classList.add('playing');
+                    this.innerHTML = `
+                        <div class="waveform">
+                            <div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div>
+                        </div>
+                    `;
+                    
+                    playerAudio.src = urlAudio + "?t=" + new Date().getTime();
+                    playerAudio.play();
+                };
+                div.appendChild(btnAudio);
+            }
+
+            if (urlTrailer && urlTrailer !== "null" && urlTrailer !== "") {
+                const botaoTrailer = document.createElement('a');
+                botaoTrailer.href = urlTrailer;
+                botaoTrailer.target = "_blank"; 
+                botaoTrailer.className = "btn-trailer";
+                botaoTrailer.innerHTML = "🎬 Assistir Trailer";
+                div.appendChild(botaoTrailer);
+            }
+
+            historico.insertBefore(div, typingContainer);
+            historico.scrollTop = historico.scrollHeight;
+        }
+
+        async function enviarMensagem() {
+            const mensagem = inputMensagem.value.trim();
+            if (!mensagem) return;
+
+            adicionarBalao(mensagem, 'usuario');
+            inputMensagem.value = '';
+            
+            typingContainer.style.display = 'flex';
+            historico.scrollTop = historico.scrollHeight;
+
+            try {
+                const resposta = await fetch('/enviar_mensagem', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ mensagem: mensagem, idioma: idiomaAtual }) 
+                });
+
+                if (!resposta.ok) throw new Error("Erro no servidor.");
+
+                const dados = await resposta.json();
+                typingContainer.style.display = 'none';
+
+                // MÁGICA 4D: Lê o tema que a IA decidiu e troca o CSS da página inteira!
+                if (dados.tema_visual) {
+                    document.body.className = `theme-${dados.tema_visual}`;
+                }
+
+                adicionarBalao(dados.resposta_texto, 'ia', dados.link_redirecionamento, dados.url_audio);
+
+            } catch (erro) {
+                typingContainer.style.display = 'none';
+                mostrarToast();
+                console.error(erro);
+            }
+        }
+    </script>
+</body>
+</html>
