@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Chef AI</title>
+
+<style>
+/* =========================
+   TEMA CLARO (PADRÃO)
+========================= */
+body {
+    font-family: Arial;
+    background: #fff7ed;
+    color: #111;
+    padding: 20px;
+    transition: 0.3s;
+}
+
+.container {
+    max-width: 900px;
+    margin: auto;
+}
+
+.card {
+    background: white;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+h1 {
+    color: #f97316;
+}
+
+input, textarea {
+    width: 100%;
+    padding: 10px;
+    margin-top: 8px;
+    margin-left: -10px;
+    margin-bottom: 10px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+}
+
+button {
+    background: #f97316;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #ea580c;
+}
+
+.hidden {
+    display: none;
+}
+
+.score {
+    font-size: 40px;
+    font-weight: bold;
+    color: green;
+}
+
+/* =========================
+   DARK MODE
+========================= */
+.dark-mode {
+    background: #0f172a;
+    color: #f1f5f9;
+}
+
+.dark-mode .card {
+    background: #1e293b;
+    color: #f1f5f9;
+}
+
+.dark-mode input,
+.dark-mode textarea {
+    background: #0f172a;
+    color: white;
+    border: 1px solid #334155;
+}
+
+.dark-mode h1 {
+    color: #fb923c;
+}
+
+.toggle-btn {
+    position: fixed;
+    top: 15px;
+    right: 15px;
+    background: #111;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 20px;
+    cursor: pointer;
+}
+</style>
+</head>
+
+<body>
+
+<!-- BOTÃO DARK MODE -->
+<button class="toggle-btn" onclick="toggleDark()">🌙 Dark Mode</button>
+
+<div class="container">
+
+<h1> Chef AI</h1>
+
+<div class="card">
+    <h2>Crie sua receita</h2>
+
+    <input id="ingredientes" placeholder="Ingredientes (ex: frango, arroz, tomate)">
+    <input id="equipamentos" placeholder="Equipamentos (forno, airfryer...)">
+    <input id="nivel" placeholder="Nível (iniciante, médio, avançado)">
+
+    <button onclick="gerarReceita()">🍳 Gerar Receita</button>
+</div>
+
+<div id="resultado" class="card hidden">
+    <h2 id="nome_prato"></h2>
+    <p id="resumo"></p>
+
+    <div class="score" id="score"></div>
+
+    <h3>Passo a passo</h3>
+    <ol id="passos"></ol>
+
+    <h3>Erros comuns</h3>
+    <ul id="erros"></ul>
+</div>
+
+<div id="refinarBox" class="card hidden">
+    <h2>🔍 Melhore sua receita</h2>
+
+    <textarea id="respostas" placeholder="Responda as perguntas da IA aqui..."></textarea>
+
+    <button onclick="refinarReceita()">⚡ Refinar Receita</button>
+</div>
+
+</div>
+
+<script>
+
+let receitaAtual = null;
+
+/* =========================
+   DARK MODE TOGGLE
+========================= */
+function toggleDark() {
+    document.body.classList.toggle("dark-mode");
+}
+
+/* =========================
+   GERAR RECEITA
+========================= */
+async function gerarReceita() {
+
+    const ingredientes = document.getElementById("ingredientes").value;
+    const equipamentos = document.getElementById("equipamentos").value;
+    const nivel = document.getElementById("nivel").value;
+
+    const res = await fetch("/receita", {
+        method: "POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({ ingredientes, equipamentos, nivel })
+    });
+
+    receitaAtual = await res.json();
+
+    document.getElementById("nome_prato").innerText =
+        receitaAtual.receita_otimizada?.nome_prato || "Receita";
+
+    document.getElementById("resumo").innerText =
+        receitaAtual.resumo_receita;
+
+    document.getElementById("score").innerText =
+        receitaAtual.score_receita_estimado + "/100";
+
+    const passos = document.getElementById("passos");
+    passos.innerHTML = "";
+    receitaAtual.receita_otimizada?.passo_a_passo_chef.forEach(p => {
+        passos.innerHTML += `<li>${p}</li>`;
+    });
+
+    const erros = document.getElementById("erros");
+    erros.innerHTML = "";
+    receitaAtual.erros_comuns.forEach(e => {
+        erros.innerHTML += `<li>${e}</li>`;
+    });
+
+    document.getElementById("resultado").classList.remove("hidden");
+    document.getElementById("refinarBox").classList.remove("hidden");
+}
+
+/* =========================
+   REFINAR RECEITA
+========================= */
+async function refinarReceita() {
+
+    const respostas = document.getElementById("respostas").value;
+
+    const res = await fetch("/refinar", {
+        method: "POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({
+            receita: receitaAtual,
+            respostas
+        })
+    });
+
+    const data = await res.json();
+
+    console.log(data);
+    alert("Receita refinada com sucesso! Veja o console.");
+}
+
+</script>
+
+</body>
+</html>
